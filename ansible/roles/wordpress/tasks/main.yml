@@ -1,0 +1,69 @@
+---
+  - name: Instalando os pacotes abaixo
+    apt:
+      name:
+      - nginx
+      - unzip
+      - php-imagick
+      - php7.4-fpm
+      - php7.4-mbstring
+      - php7.4-bcmath
+      - php7.4-xml
+      - php7.4-mysql
+      - php7.4-common
+      - php7.4-gd
+      - php7.4-json
+      - php7.4-cli
+      - php7.4-curl
+      - php7.4-zip
+      update_cache: true
+
+  - name: Template nginx config file for wordpress
+    ansible.builtin.template:
+      src: blog.conf.j2
+      dest: /etc/nginx/conf.d/blog.conf
+
+  - name: Template nginx config file for wordpress
+    ansible.builtin.template:
+      src: blog.conf.j2
+      dest: /etc/nginx/sites-enabled/default
+
+  - name: Download wordpress project
+    ansible.builtin.unarchive:
+      src: https://wordpress.org/latest.zip
+      dest: /var/www/html/
+      remote_src: yes 
+
+  - name: Config permissions
+    ansible.builtin.file:
+      path: /var/www/html/wordpress
+      owner: www-data
+      group: www-data
+      mode: '0755'
+
+  - name: Config wordpress
+    template:
+      src: wp-config.php.j2
+      dest: /var/www/html/wordpress/wp-config.php 
+
+  - name: Config memcached session save handler
+    ansible.builtin.lineinfile:
+      path: /etc/php/7.4/fpm/php.ini
+      regexp: 'session.save_handler = files'
+      line: 'session.save_handler = memcached'
+
+  - name: Config memcached session save path
+    ansible.builtin.lineinfile:
+      path: /etc/php/7.4/fpm/php.ini
+      regexp: ';session.save_path = "/var/lib/php/sessions"'
+      line: 'session.save_path = "sre-wordpress-memcached-cluster.n7wecf.cfg.use1.cache.amazonaws.com:11211"'
+      
+  - name: Restart nginx
+    service:
+      name: nginx
+      state: restarted
+
+  - name: Restart php7.4-fpm
+    service:
+      name: php7.4-fpm
+      state: restarted 

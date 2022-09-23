@@ -1,0 +1,4 @@
+[aws_hosts]
+%{ for ip in instance_ips ~}
+${ip}
+%{ endfor ~}

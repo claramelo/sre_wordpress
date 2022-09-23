@@ -1,0 +1,38 @@
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path:  /etc/nginx/ssls
+    state: directory
+    mode: '0755'
+
+- name: Create private key (rsa:2048)
+  community.crypto.openssl_privatekey:
+    path: /etc/nginx/ssls/private.key
+    size: 2048
+    type: RSA
+
+- name: Create certificate signing request (CSR) for self-signed certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /etc/nginx/ssls/private.key
+    country_name: BR
+    state_or_province_name: Manaus
+    locality_name: Manaus
+    organization_name: sre_elven
+    organizational_unit_name: sre_elven
+    common_name: sre-wordpress.com.br
+    email_address: mcmelodecarvalho@gmail.com
+  register: csr
+
+- name: Create self-signed certificate from CSR
+  community.crypto.x509_certificate:
+    path: /etc/nginx/ssls/blog.crt
+    csr_content: "{{ csr.csr }}"
+    privatekey_path: /etc/nginx/ssls/private.key
+    provider: selfsigned
+
+- name: Convert .key into .pem
+  ansible.builtin.shell:
+    cmd: openssl rsa -in /etc/nginx/ssls/private.key -text > /etc/nginx/ssls/private.pem
+
+- name: Convert .crt into .pem
+  ansible.builtin.shell:
+    cmd:  openssl x509 -inform PEM -in /etc/nginx/ssls/blog.crt > /etc/nginx/ssls/public.pem

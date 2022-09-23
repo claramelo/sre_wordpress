@@ -1,0 +1,10 @@
+---
+- name: wordpress
+  hosts: aws_hosts
+  become: yes
+  vars_files:
+    - "./vars/variables.yml"
+  roles:
+    - certificate
+    - wordpress
+    - ec2

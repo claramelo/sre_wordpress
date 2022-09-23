@@ -1,0 +1,5 @@
+---
+  - name: Create EC2 image
+    shell:
+      aws ec2 create-image --instance-id {{ wordpress_instance_id }} --name "Wordpress image" --description "An AMI for wordpress server"
+    delegate_to: 127.0.0.1
